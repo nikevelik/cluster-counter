@@ -18,13 +18,13 @@ namespace clusters{
     int ClusterCounter::count_clusters(std::vector<std::vector<bool>>& grid){
         validate_input(grid);
 
-        int rows = grid.size();
-        int cols = grid[0].size();
+        const int rows = grid.size();
+        const int cols = grid[0].size();
         int result = 0;
-        for (int i = 0; i < rows; i++){
-            for (int j = 0; j < cols; j++){
-                if(grid[i][j]){
-                    ClusterCounter::traverse_cluster(grid, i, j, rows, cols);
+        for (int row = 0; row < rows; row++){
+            for (int col = 0; col < cols; col++){
+                if(grid[row][col]){
+                    ClusterCounter::traverse_cluster(grid, row, col, rows, cols);
                     result++;
                 }
             }
@@ -42,14 +42,16 @@ namespace clusters{
     * @return The number of clusters found
     */
     int ClusterCounter::count_clusters(const std::vector<std::vector<bool>>& grid){
-        int rows = grid.size();
-        int cols = grid[0].size();
+        validate_input(grid);
+
+        const int rows = grid.size();
+        const int cols = grid[0].size();
         std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
         int result = 0;
-        for (int i = 0; i < rows; i++){
-            for (int j = 0; j < cols; j++){
-                if(grid[i][j] && !visited[i][j]){
-                    ClusterCounter::traverse_cluster(grid, visited, i, j, rows, cols);
+        for (int row = 0; row < rows; row++){
+            for (int col = 0; col < cols; col++){
+                if(grid[row][col] && !visited[row][col]){
+                    ClusterCounter::traverse_cluster(grid, visited, row, col, rows, cols);
                     result++;
                 }
             }
@@ -69,20 +71,20 @@ namespace clusters{
     *         or the grid size exceeds the maximum allowed cells.
     */
     void ClusterCounter::validate_input(const std::vector<std::vector<bool>>& grid) {
-        auto rows = grid.size();
+        const auto rows = grid.size();
         
         if (rows == 0 || grid[0].size() == 0) {
             throw std::invalid_argument("std::vector<std::vector<bool>> cannot be empty or contain empty rows.");
         }
         
-        auto cols = grid[0].size();
+        const auto cols = grid[0].size();
         
         if (rows > MAX_CELLS / cols) {
             throw std::invalid_argument("The number of cells exceeds 2^31 (maximum allowed cells).");
         }
         
-        for (int i = 0; i < rows; i++) {
-            if (grid[i].size() != cols) {
+        for (int row = 0; row < rows; row++) {
+            if (grid[row].size() != cols) {
                 throw std::invalid_argument("All rows in the grid must have the same number of cells.");
             }
         }
@@ -108,10 +110,10 @@ namespace clusters{
         std::queue<std::pair<int, int>> waiting;
         waiting.push({start_row, start_col});
         while(!waiting.empty()){
-            auto [row, col] = waiting.front();
-            for (int i = 0; i < deltas_number; i++) {
-                int new_row = row + row_deltas[i];
-                int new_col = col + col_deltas[i];
+            const auto [row, col] = waiting.front();
+            for (int current_delta = 0; current_delta < deltas_number; current_delta++) {
+                const int new_row = row + row_deltas[current_delta];
+                const int new_col = col + col_deltas[current_delta];
                 if(0 <= new_row && new_row < rows && 0 <= new_col && new_col < cols && grid[new_row][new_col]){
                     waiting.push({new_row, new_col});
                     grid[new_row][new_col] = 0;
@@ -147,10 +149,10 @@ namespace clusters{
         std::queue<std::pair<int, int>> waiting;
         waiting.push({start_row, start_col});
         while(!waiting.empty()){
-            auto [row, col] = waiting.front();
-            for (int i = 0; i < deltas_number; i++) {
-                int new_row = row + row_deltas[i];
-                int new_col = col + col_deltas[i];
+            const auto [row, col] = waiting.front();
+            for (int current_delta = 0; current_delta < deltas_number; current_delta++) {
+                const int new_row = row + row_deltas[current_delta];
+                const int new_col = col + col_deltas[current_delta];
                 if(0 <= new_row && new_row < rows && 0 <= new_col && new_col < cols &&
                     grid[new_row][new_col] && !visited[new_row][new_col]){
                         waiting.push({new_row, new_col});

@@ -82,6 +82,9 @@ namespace clusters{
         static int count_clusters(const std::vector<std::vector<bool>>& grid);
 
     private: 
+        
+        ClusterCounter() = delete;
+
         /**
         * @brief Validates the input grid for proper dimensions and size constraints.
         * 
