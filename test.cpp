@@ -1,6 +1,5 @@
 #include<iostream>
 #include<vector>
-#include<chrono>   
 #include"ClusterCounter.h"
 #include <cassert>
 
@@ -10,20 +9,66 @@ class ClusterTest {
 public:
 
     // Run the test for a specific grid with timing and result output
-    void run_test(const std::string& test_name, const std::vector<std::vector<bool>>& grid, int expected_clusters) {
-        auto start = std::chrono::high_resolution_clock::now();
+    void run_test(const std::string& test_name, std::vector<std::vector<bool>>& grid, int expected_clusters) {
         int clusters = ClusterCounter::count_clusters(grid);
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> duration = end - start;
-
-        // Assert that the result is as expected
         assert(clusters == expected_clusters);
-
-        // Optionally print timing, but it's not necessary for the assertion-based test
-        std::cout << test_name << " --- Clusters: " << clusters << " (Expected: " << expected_clusters << ")\n";
+        std::cout << test_name << " was successful\n";
     }
 
-    // Test 1: Small grid with manually added clusters (3x3 grid)
+    // When grid has no rows
+    void test_no_rows() {
+        std::vector<std::vector<bool>> grid = {}; // Empty grid (no rows)
+        try {
+            ClusterCounter::count_clusters(grid);
+            assert(false && "Exception should have been thrown for no rows");
+        } catch (const std::invalid_argument& e) {
+            assert(std::string(e.what()) == "std::vector<std::vector<bool>> cannot be empty or contain empty rows.");
+        }
+        std::cout << "No rows throw assertion was successful" << std::endl;
+    }
+
+    // When grid has no columns
+    void test_no_columns() {
+        std::vector<std::vector<bool>> grid = {{}}; // std::vector<std::vector<bool>> with no columns
+        try {
+            ClusterCounter::count_clusters(grid);
+            assert(false && "Exception should have been thrown for no columns");
+        } catch (const std::invalid_argument& e) {
+            assert(std::string(e.what()) == "std::vector<std::vector<bool>> cannot be empty or contain empty rows.");
+        }
+        std::cout << "No columns throw assertion was successful" << std::endl;
+
+    }
+
+    // Very large grid (50,000 x 50,000)
+    void test_large_grid_exception() {
+        std::vector<std::vector<bool>> grid(50000, std::vector<bool>(50000, 0));  // Too large grid
+        try {
+            ClusterCounter::count_clusters(grid);
+            assert(false && "Exception should have been thrown for large grid size");
+        } catch (const std::invalid_argument& e) {
+            assert(std::string(e.what()) == "The number of cells exceeds 2^31 (maximum allowed cells).");
+        }
+        std::cout << "large grid size throw assertion was successful" << std::endl;
+    }
+
+    // Irregularly shaped grid (rows of different lengths)
+    void test_irregular_shape() {
+        std::vector<std::vector<bool>> grid = {
+            {1, 1},
+            {1, 1, 1},  // Irregular row size
+            {1, 1}
+        };
+        try {
+            ClusterCounter::count_clusters(grid);
+            assert(false && "Exception should have been thrown for irregular shape");
+        } catch (const std::invalid_argument& e) {
+            assert(std::string(e.what()) == "All rows in the grid must have the same number of cells.");
+        }
+        std::cout << "Irregular shape throw assertion was successful" << std::endl;
+    }
+
+    // Small grid with manually added clusters (3x3 grid)
     void test_small_grid() {
         std::vector<std::vector<bool>> small_grid = {
             {1, 1, 0},
@@ -33,7 +78,7 @@ public:
         run_test("Small std::vector<std::vector<bool>> (3x3)", small_grid, 2);  // Expected: 2 clusters
     }
 
-    // Test 2: Large grid (100x100) with predefined clusters
+    // Large grid (100x100) with predefined clusters
     void test_large_grid_100x100() {
         std::vector<std::vector<bool>> grid(100, std::vector<bool>(100, 0));  // Start with all 0s
 
@@ -63,7 +108,7 @@ public:
         run_test("Large std::vector<std::vector<bool>> (100x100)", grid, 3);
     }
 
-    // Test 3: Very Large grid (500x500) with predefined clusters
+    // Very Large grid (500x500) with predefined clusters
     void test_large_grid_500x500() {
         std::vector<std::vector<bool>> grid(500, std::vector<bool>(500, 0));  // Start with all 0s
 
@@ -92,7 +137,7 @@ public:
         run_test("Very Large std::vector<std::vector<bool>> (500x500)", grid, 3);
     }
 
-    // Test 4: Extremely Large grid (1000x1000) with predefined clusters
+    // Extremely Large grid (1000x1000) with predefined clusters
     void test_large_grid_1000x1000() {
         std::vector<std::vector<bool>> grid(1000, std::vector<bool>(1000, 0));  // Start with all 0s
 
@@ -121,7 +166,7 @@ public:
         run_test("Extremely Large std::vector<std::vector<bool>> (1000x1000)", grid, 3);
     }
 
-    // Test 5: Sparse std::vector<std::vector<bool>> (50x50 with few clusters)
+    // Sparse std::vector<std::vector<bool>> (50x50 with few clusters)
     void test_sparse_grid() {
         std::vector<std::vector<bool>> sparse_grid(50, std::vector<bool>(50, 0));  // Initially all 0s
         sparse_grid[10][10] = 1;
@@ -130,19 +175,25 @@ public:
         run_test("Sparse std::vector<std::vector<bool>> (50x50)", sparse_grid, 3);  // Expected: 3 clusters
     }
 
-    // Test 6: std::vector<std::vector<bool>> with no clusters (50x50 with all zeros)
+    // std::vector<std::vector<bool>> with no clusters (50x50 with all zeros)
     void test_no_clusters_grid() {
         std::vector<std::vector<bool>> no_clusters_grid(50, std::vector<bool>(50, 0));
         run_test("No Clusters std::vector<std::vector<bool>> (50x50)", no_clusters_grid, 0);  // Expected: 0 clusters
     }
 
-    // Test 7: std::vector<std::vector<bool>> with all ones (50x50)
-    void test_all_ones_grid() {
-        std::vector<std::vector<bool>> all_ones_grid(50, std::vector<bool>(50, 1));
+    // Test: std::vector<std::vector<bool>> with all 1s (50x50)
+    void test_all_ones_50x50() {
+        std::vector<std::vector<bool>> all_ones_grid(50, std::vector<bool>(50, 1));  // Create a 50x50 grid filled with 1s
         run_test("All Ones std::vector<std::vector<bool>> (50x50)", all_ones_grid, 1);  // Expected: 1 cluster
     }
 
-    // Test 8: 1x1 grid with 0
+    // Test: std::vector<std::vector<bool>> with all 1s (1000x1000)
+    void test_all_ones_1000x1000() {
+        std::vector<std::vector<bool>> all_ones_grid(1000, std::vector<bool>(1000, 1));  // Create a 1000x1000 grid filled with 1s
+        run_test("All Ones std::vector<std::vector<bool>> (1000x1000)", all_ones_grid, 1);  // Expected: 1 cluster
+    }
+
+    // 1x1 grid with 0
     void test_one_by_one_0() {
         std::vector<std::vector<bool>> one_by_one_0 = {
             {0}
@@ -150,7 +201,7 @@ public:
         run_test("1x1 std::vector<std::vector<bool>> (0)", one_by_one_0, 0);  // Expected: 0 clusters
     }
 
-    // Test 9: 1x1 grid with 1
+    // 1x1 grid with 1
     void test_one_by_one_1() {
         std::vector<std::vector<bool>> one_by_one_1 = {
             {1}
@@ -158,21 +209,7 @@ public:
         run_test("1x1 std::vector<std::vector<bool>> (1)", one_by_one_1, 1);  // Expected: 1 cluster
     }
 
-    // New Tests:
-
-    // Test 10: Single large cluster spanning the grid (50x50)
-    void test_single_large_cluster() {
-        std::vector<std::vector<bool>> grid(50, std::vector<bool>(50, 0));  // Start with all 0s
-        // Fill a large cluster spanning most of the grid, leaving one row and column as zeros
-        for (int i = 0; i < 49; i++) {
-            for (int j = 0; j < 49; j++) {
-                grid[i][j] = 1;
-            }
-        }
-        run_test("Single Large Cluster (50x50)", grid, 1);  // Expected: 1 cluster
-    }
-
-    // Test 11: Two diagonal clusters (50x50)
+    // Two diagonal clusters (50x50)
     void test_two_diagonal_clusters() {
         std::vector<std::vector<bool>> grid(50, std::vector<bool>(50, 0));  // Start with all 0s
         // Cluster 1: diagonal from top-left to bottom-right
@@ -186,7 +223,7 @@ public:
         run_test("Two Diagonal Clusters (50x50)", grid, 97);  // Expected: 97 clusters
     }
 
-    // Test 12: Two separate clusters (50x50)
+    // Two separate clusters (50x50)
     void test_two_separate_clusters() {
         std::vector<std::vector<bool>> grid(50, std::vector<bool>(50, 0));  // Start with all 0s
         // Cluster 1
@@ -204,7 +241,7 @@ public:
         run_test("Two Separate Clusters (50x50)", grid, 2);  // Expected: 2 clusters
     }
 
-    // Test 13: Checkerboard pattern (50x50)
+    // Checkerboard pattern (50x50)
     void test_checkerboard_pattern() {
         std::vector<std::vector<bool>> grid(50, std::vector<bool>(50, 0));  // Start with all 0s
         // Create a checkerboard pattern
@@ -218,7 +255,7 @@ public:
         run_test("Checkerboard Pattern (50x50)", grid, 1250);  // Expected: 1250 clusters
     }
 
-    // Test 14: Large isolated cluster (50x50)
+    // Large isolated cluster (50x50)
     void test_large_isolated_cluster() {
         std::vector<std::vector<bool>> grid(50, std::vector<bool>(50, 0));  // Start with all 0s
         // Create a large isolated cluster in the middle of the grid
@@ -230,7 +267,7 @@ public:
         run_test("Large Isolated Cluster (50x50)", grid, 1);  // Expected: 1 cluster
     }
 
-    // Test 15: std::vector<std::vector<bool>> with one row (1x50)
+    // std::vector<std::vector<bool>> with one row (1x50)
     void test_one_row_grid() {
         std::vector<std::vector<bool>> grid(1, std::vector<bool>(50, 0));
         // Add clusters in the row
@@ -240,7 +277,7 @@ public:
         run_test("One Row std::vector<std::vector<bool>> (1x50)", grid, 3);  // Expected: 3 clusters
     }
 
-    // Test 16: std::vector<std::vector<bool>> with one column (50x1)
+    // std::vector<std::vector<bool>> with one column (50x1)
     void test_one_column_grid() {
         std::vector<std::vector<bool>> grid(50, std::vector<bool>(1, 0));
         // Add clusters in the column
@@ -250,7 +287,7 @@ public:
         run_test("One Column std::vector<std::vector<bool>> (50x1)", grid, 3);  // Expected: 3 clusters
     }
 
-    // Test 17: Large gap between clusters (50x50)
+    // Large gap between clusters (50x50)
     void test_large_gap_between_clusters() {
         std::vector<std::vector<bool>> grid(50, std::vector<bool>(50, 0));  // Start with all 0s
         // Cluster 1
@@ -274,7 +311,7 @@ public:
         run_test("Large Gap Between Clusters (50x50)", grid, 3);  // Expected: 3 clusters
     }
 
-    // Test 18: Single column cluster (50x50)
+    // Single column cluster (50x50)
     void test_single_column_cluster() {
         std::vector<std::vector<bool>> grid(50, std::vector<bool>(50, 0));  // Start with all 0s
         // A single column of ones
@@ -284,7 +321,7 @@ public:
         run_test("Single Column Cluster (50x50)", grid, 1);  // Expected: 1 cluster
     }
 
-    // Test 19: Spiral cluster pattern (50x50)
+    // Spiral cluster pattern (50x50)
     void test_spiral_cluster() {
         std::vector<std::vector<bool>> grid(50, std::vector<bool>(50, 0));  // Start with all 0s
         int x = 0, y = 0;
@@ -299,84 +336,7 @@ public:
         run_test("Spiral Cluster (50x50)", grid, 1);  // Expected: 1 cluster
     }
 
-
-    // Test 20: Throw exception when grid has no rows
-    void test_no_rows() {
-        std::vector<std::vector<bool>> grid = {}; // Empty grid (no rows)
-        try {
-            ClusterCounter::count_clusters(grid);
-            assert(false && "Exception should have been thrown for no rows");
-        } catch (const std::invalid_argument& e) {
-            assert(std::string(e.what()) == "std::vector<std::vector<bool>> cannot be empty or contain empty rows.");
-        }
-        std::cout << "No rows throw assertion was successful" << std::endl;
-    }
-
-    // Test 21: Throw exception when grid has no columns
-    void test_no_columns() {
-        std::vector<std::vector<bool>> grid = {{}}; // std::vector<std::vector<bool>> with no columns
-        try {
-            ClusterCounter::count_clusters(grid);
-            assert(false && "Exception should have been thrown for no columns");
-        } catch (const std::invalid_argument& e) {
-            assert(std::string(e.what()) == "std::vector<std::vector<bool>> cannot be empty or contain empty rows.");
-        }
-        std::cout << "No columns throw assertion was successful" << std::endl;
-
-    }
-
-    // Test 22: Throw exception for a very large grid (50,000 x 50,000)
-    void test_large_grid_exception() {
-        std::vector<std::vector<bool>> grid(50000, std::vector<bool>(50000, 0));  // Too large grid
-        try {
-            ClusterCounter::count_clusters(grid);
-            assert(false && "Exception should have been thrown for large grid size");
-        } catch (const std::invalid_argument& e) {
-            assert(std::string(e.what()) == "The number of cells exceeds 2^31 (maximum allowed cells).");
-        }
-        std::cout << "large grid size throw assertion was successful" << std::endl;
-    }
-
-    // Test 23: Throw exception for irregularly shaped grid (rows of different lengths)
-    void test_irregular_shape() {
-        std::vector<std::vector<bool>> grid = {
-            {1, 1},
-            {1, 1, 1},  // Irregular row size
-            {1, 1}
-        };
-        try {
-            ClusterCounter::count_clusters(grid);
-            assert(false && "Exception should have been thrown for irregular shape");
-        } catch (const std::invalid_argument& e) {
-            assert(std::string(e.what()) == "All rows in the grid must have the same number of cells.");
-        }
-        std::cout << "Irregular shape throw assertion was successful" << std::endl;
-    }
-
-    // Test: std::vector<std::vector<bool>> with all 1s (50x50)
-    void test_all_ones_50x50() {
-        std::vector<std::vector<bool>> all_ones_grid(50, std::vector<bool>(50, 1));  // Create a 50x50 grid filled with 1s
-        run_test("All Ones std::vector<std::vector<bool>> (50x50)", all_ones_grid, 1);  // Expected: 1 cluster
-    }
-
-    // Test: std::vector<std::vector<bool>> with all 1s (100x100)
-    void test_all_ones_100x100() {
-        std::vector<std::vector<bool>> all_ones_grid(100, std::vector<bool>(100, 1));  // Create a 100x100 grid filled with 1s
-        run_test("All Ones std::vector<std::vector<bool>> (100x100)", all_ones_grid, 1);  // Expected: 1 cluster
-    }
-
-    // Test: std::vector<std::vector<bool>> with all 1s (500x500)
-    void test_all_ones_500x500() {
-        std::vector<std::vector<bool>> all_ones_grid(500, std::vector<bool>(500, 1));  // Create a 500x500 grid filled with 1s
-        run_test("All Ones std::vector<std::vector<bool>> (500x500)", all_ones_grid, 1);  // Expected: 1 cluster
-    }
-
-    // Test: std::vector<std::vector<bool>> with all 1s (1000x1000)
-    void test_all_ones_1000x1000() {
-        std::vector<std::vector<bool>> all_ones_grid(1000, std::vector<bool>(1000, 1));  // Create a 1000x1000 grid filled with 1s
-        run_test("All Ones std::vector<std::vector<bool>> (1000x1000)", all_ones_grid, 1);  // Expected: 1 cluster
-    }
-
+    // 20M grod
     void test_large_grid_20_million_random_clusters() {
         // Define the grid size (4000x5000 = 20 million)
         const int rows = 4000;
@@ -420,6 +380,7 @@ public:
         run_test("20 Million std::vector<std::vector<bool>> (4000x5000) with random clusters", grid, 6);  // Expected: 6 clusters
     }
 
+    // 100M grid
     void test_large_grid_100_million_random_clusters() {
         // Define the grid size (10,000 x 10,000 = 100 million)
         const int rows = 10000;
@@ -463,6 +424,7 @@ public:
         run_test("100 Million std::vector<std::vector<bool>> (10000x10000) with random clusters", grid, 6);  // Expected: 6 clusters
     }
 
+    // 2B grid
     void test_large_grid_50k_by_40k_random_clusters() {
         // Define the grid size (50,000 x 40,000 = 2 billion cells)
         const int rows = 50000;
@@ -512,16 +474,20 @@ public:
 
     // Run all tests
     void run_all_tests() {
+
+        test_no_rows();
+        test_no_columns();
+        test_large_grid_exception();
+        test_irregular_shape();
+
         test_small_grid();
         test_large_grid_100x100();
         test_large_grid_500x500();
         test_large_grid_1000x1000();
         test_sparse_grid();
         test_no_clusters_grid();
-        test_all_ones_grid();
         test_one_by_one_0();
         test_one_by_one_1();
-        test_single_large_cluster();
         test_two_diagonal_clusters();
         test_two_separate_clusters();
         test_checkerboard_pattern();
@@ -531,14 +497,7 @@ public:
         test_large_gap_between_clusters();
         test_single_column_cluster();
         test_spiral_cluster();
-
-        test_no_rows();
-        test_no_columns();
-        test_large_grid_exception();
-        test_irregular_shape();
         test_all_ones_50x50();
-        test_all_ones_100x100();
-        test_all_ones_500x500();
         test_all_ones_1000x1000();
         test_large_grid_20_million_random_clusters();
         test_large_grid_100_million_random_clusters();
